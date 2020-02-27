@@ -25,10 +25,13 @@ def f_leer_archivo(param_archivo):
 
     Debugging
     ---------
-    param_archivo = 'archivo_tradeview_1.xlsx'
+    param_archivo = 'archivo_tradeview_1.csv'
 
     """
 
-    df_data = pd.read_excel('archivos/' + param_archivo, sheet_name='Hoja1')
-
+    df_data = pd.read_csv('archivos/' + param_archivo)
+    df_data.columns = [i.lower() for i in list(df_data.columns)]
+    numcols = ['s/l', 't/p', 'commission', 'openprice', 'closeprice', 'profit', 'size', 'swap', 'taxes', 'order']
+    df_data[numcols] = df_data[numcols].apply(pd.to_numeric)
     return df_data
+

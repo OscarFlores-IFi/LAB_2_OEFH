@@ -5,3 +5,8 @@
 # -- mantiene: Francisco ME
 # -- repositorio: https://github.com/IFFranciscoME/LAB_2_JFME
 # -- ------------------------------------------------------------------------------------ -- #
+
+import funciones as fn
+
+archivo = "archivo_tradeview_1.csv"
+datos = fn.f_leer_archivo(archivo)
