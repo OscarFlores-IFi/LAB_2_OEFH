@@ -10,3 +10,6 @@ import funciones as fn
 
 archivo = "archivo_tradeview_1.csv"
 datos = fn.f_leer_archivo(archivo)
+
+param_ins='usdjpy'
+fn.f_pip_size(param_ins)
