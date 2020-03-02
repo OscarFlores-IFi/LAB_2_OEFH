@@ -9,6 +9,8 @@
 import pandas as pd
 
 
+
+
 # -- --------------------------------------------------- FUNCION: Leer archivo de entrada -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # --
@@ -72,3 +74,47 @@ def f_pip_size(param_ins):
 
     return pips_inst[inst]
     return
+
+
+
+
+# -- ------------------------------------------------------ FUNCION: Convertir a datetime -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- calcular el tamaño de los pips por instrumento
+
+def f_columnas_tiempos(param_data):
+    """
+    Parameters:
+
+    param_data : str : nombre del archivo a leer.
+
+    Return : pd DataFrame :
+
+    Debugging
+    --------
+    param_data = datos
+    """
+
+    # Convertir las columnas de closetime y opentime con to_datetime
+    param_data['closetime'] = pd.to_datetime(param_data['closetime'])
+    param_data['opentime'] = pd.to_datetime(param_data['opentime'])
+
+    # Tiempo transcurrido de una operación
+    param_data['tiempo'] = [(param_data.loc[i, 'closetime'] - param_data.loc[i, 'opentime']).delta / 1e9
+                            for i in range(0, len(param_data['closetime']))]
+
+    #
+
+    return param_data
+
+
+
+
+# -- ------------------------------------------------------ FUNCION: Pips por instrumento -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- calcular el tamaño de los pips por instrumento
+
+def f_columnas_pips(datos):
+    datos['pips_acm'] = [(datos.closeprice[i]-datos.openprice[i])*f_pip_size(datos.symbol[i]) for i in range(len(datos))]
+    datos['pips_acm'][datos.type=='sell'] *= -1
+    

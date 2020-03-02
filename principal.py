@@ -13,3 +13,6 @@ datos = fn.f_leer_archivo(archivo)
 
 param_ins='usdjpy'
 fn.f_pip_size(param_ins)
+
+
+
