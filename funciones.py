@@ -117,4 +117,35 @@ def f_columnas_tiempos(param_data):
 def f_columnas_pips(datos):
     datos['pips_acm'] = [(datos.closeprice[i]-datos.openprice[i])*f_pip_size(datos.symbol[i]) for i in range(len(datos))]
     datos['pips_acm'][datos.type=='sell'] *= -1
-    
+    datos['profit_acm'] = datos['profit'].cumsum()
+    return datos
+
+
+# -- ------------------------------------------------------ FUNCION: Pips por instrumento -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- calcular el tamaño de los pips por instrumento
+
+def f_estadisticas_ba(datos):
+    return pd.DataFrame({
+        'Ops totales': [len(datos['order']), 'Operaciones totales'],
+        'Ganadoras': [len(datos[datos['pips_acm']>=0]), 'Operaciones ganadoras'],
+        'Ganadoras_c': [len(datos[(datos['type']=='buy') & (datos['pips_acm']>=0)]), 'Operaciones ganadoras de compra'],
+        'Ganadoras_s': [len(datos[(datos['type']=='sell') & (datos['pips_acm']>=0)]), 'Operaciones ganadoras de venta'],
+        'Perdedoras': [len(datos[datos['pips_acm'] < 0]), 'Operaciones perdedoras'],
+        'Perdedoras_c': [len(datos[(datos['type']=='buy') & (datos['pips_acm']<0)]), 'Operaciones perdedoras de compra'],
+        'Perdedoras_s': [len(datos[(datos['type']=='sell') & (datos['pips_acm']<0)]), 'Operaciones perdedoras de venta'],
+        'Mediana_profit': [datos['profit'].median(), 'Mediana de rendimeintos de las operaciones'],
+        'Mediana_pips': [datos['pips_acm'].median(), 'Mediana de pips de las operaciones'],
+        'r_efectividad': [len(datos[datos['pips_acm']>=0])/len(datos['order']),
+                          'Operaciones Totales Vs Ganadoras Totales'],
+        'r_proporcion': [len(datos[datos['pips_acm']>=0])/len(datos[datos['pips_acm'] < 0]),
+                            'Ganadoras Totales Vs Perdedoras Totales'],
+        'r_efectividad_c': [len(datos[(datos['type']=='buy') & (datos['pips_acm']>=0)])/len(datos['order']),
+                            'Totales Vs Ganadoras Compras'],
+        'r_efectividad_v': [len(datos[(datos['type']=='sell') & (datos['pips_acm']>=0)])/len(datos['order']),
+                            'Totales Vs Ganadoras Ventas']
+
+
+    })
+
+

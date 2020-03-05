@@ -10,9 +10,10 @@ import funciones as fn
 
 archivo = "archivo_tradeview_1.csv"
 datos = fn.f_leer_archivo(archivo)
+fn.f_columnas_tiempos(datos)
+fn.f_columnas_pips(datos)
+estadisticas = fn.f_estadisticas_ba(datos)
 
-param_ins='usdjpy'
-fn.f_pip_size(param_ins)
 
 
 
