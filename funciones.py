@@ -80,7 +80,7 @@ def f_pip_size(param_ins):
 
 # -- ------------------------------------------------------ FUNCION: Convertir a datetime -- #
 # -- ------------------------------------------------------------------------------------ -- #
-# -- calcular el tamaño de los pips por instrumento
+# -- convertir los datos de fechas en formato datetime
 
 def f_columnas_tiempos(param_data):
     """
@@ -110,9 +110,9 @@ def f_columnas_tiempos(param_data):
 
 
 
-# -- ------------------------------------------------------ FUNCION: Pips por instrumento -- #
+# -- ------------------------------------------------------------ FUNCION: Columnas Pips --- #
 # -- ------------------------------------------------------------------------------------ -- #
-# -- calcular el tamaño de los pips por instrumento
+# -- Calcula los pips acumulados y el profit acumulado. 
 
 def f_columnas_pips(datos):
     datos['pips_acm'] = [(datos.closeprice[i]-datos.openprice[i])*f_pip_size(datos.symbol[i]) for i in range(len(datos))]
@@ -121,9 +121,9 @@ def f_columnas_pips(datos):
     return datos
 
 
-# -- ------------------------------------------------------ FUNCION: Pips por instrumento -- #
+# -- ------------------------------------------------------ FUNCION: Estadísticas básicas -- #
 # -- ------------------------------------------------------------------------------------ -- #
-# -- calcular el tamaño de los pips por instrumento
+# -- Calcula algunas estadísticas entre las operaciones generadas. 
 
 def f_estadisticas_ba(datos):
     return pd.DataFrame({
