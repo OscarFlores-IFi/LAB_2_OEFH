@@ -263,5 +263,36 @@ def f_estadisticas_mad(datos):
 
     return MAD
 
+def f_sesgos_cognitivos(datos):
+    """
+    Parameters
+    ----------
+    datos : pandas.DataFrame : df con información de profit en transacciones. Tiene que tener columna 'profit'
 
+    Returns
+    -------
+    df_markov : numpy.ndarray : df con la matriz de probabilidades de ganar/perder dinero dada la situación de perdida
+                            o ganancia de la última transacción realizada.
+
+    Debugging
+    -------
+    datos = 'f_leer_archivo("archivo_tradeview_1.csv")
+
+    """
+    def transition_matrix(transitions):
+        trans = np.ones(transitions.shape)
+        trans[transitions==False] = 0
+
+        n = len(transitions.unique())  # number of states
+        M = np.zeros((n,n))  # creates the empty Markov Matrix
+
+        for (i, j) in zip(trans[:-1], trans[1:]):
+            M[int(i),int(j)] += 1 # Dado i, se añade el acumulado de casos en el que el siguiente es j
+
+        Mat = M.T / M.sum(axis=1)
+        return Mat.T
+
+    Markov = transition_matrix(datos.profit>0)
+    df_markov = pd.DataFrame(Markov, columns=['lose', 'win'], index=['lose', 'win'])
+    return df_markov
 

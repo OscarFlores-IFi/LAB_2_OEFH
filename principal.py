@@ -15,7 +15,12 @@ datos = fn.f_columnas_pips(datos)
 datos = fn.f_capital_acm(datos)
 estadisticas = fn.f_estadisticas_ba(datos)
 desempenio = fn.f_estadisticas_mad(datos)
+sesgos = fn.f_sesgos_cognitivos(datos)
 print(datos)
 print(estadisticas['df1'])
 print(estadisticas['df2'])
 print(desempenio)
+print(sesgos)
+
+
+
