@@ -2,11 +2,12 @@
 # -- ------------------------------------------------------------------------------------ -- #
 # -- proyecto: Microestructura y Sistemas de Trading - Laboratorio 2 - Behavioral Finance
 # -- archivo: funciones.py - para procesamiento de datos
-# -- mantiene: Francisco ME
-# -- repositorio: https://github.com/IFFranciscoME/LAB_2_JFME
+# -- mantiene: Oscar Flores
+# -- repositorio: https://github.com/OscarFlores-IFi/LAB_2_OEFH
 # -- ------------------------------------------------------------------------------------ -- #
 
 import pandas as pd
+import numpy as np
 
 
 
@@ -39,6 +40,7 @@ def f_leer_archivo(param_archivo):
 
 
 
+
 # -- ------------------------------------------------------ FUNCION: Pips por instrumento -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- calcular el tamaño de los pips por instrumento
@@ -48,8 +50,11 @@ def f_pip_size(param_ins):
     Parameters
     ----------
     param_ins : str : nombre de instrumento
+
     Returns
     -------
+    pips_inst : func : valor en pips del instrumento seleccionado
+
     Debugging
     -------
     param_ins = 'usdjpy'
@@ -73,7 +78,6 @@ def f_pip_size(param_ins):
                  'xauusd': 10, 'xagusd': 10, 'btcusd': 1}
 
     return pips_inst[inst]
-    return
 
 
 
@@ -84,15 +88,17 @@ def f_pip_size(param_ins):
 
 def f_columnas_tiempos(param_data):
     """
-    Parameters:
+    Parameters
+    ----------
+    param_data : pandas.DataFrame : df con información de transacciones ejecutadas en Oanda
 
-    param_data : str : nombre del archivo a leer.
-
-    Return : pd DataFrame :
+    Returns
+    -------
+    param_data : pandas.DataFrame : df modificado
 
     Debugging
-    --------
-    param_data = datos
+    -------
+    param_data = 'f_leer_archivo("archivo_tradeview_1.csv")
     """
 
     # Convertir las columnas de closetime y opentime con to_datetime
@@ -110,23 +116,56 @@ def f_columnas_tiempos(param_data):
 
 
 
-# -- ------------------------------------------------------ FUNCION: Pips por instrumento -- #
+# -- ------------------------------------------------------------- FUNCION: Columnas pips -- #
 # -- ------------------------------------------------------------------------------------ -- #
-# -- calcular el tamaño de los pips por instrumento
+# -- calcular los pips acumulados por operación, así como el profit acumulado.
 
 def f_columnas_pips(datos):
-    datos['pips_acm'] = [(datos.closeprice[i]-datos.openprice[i])*f_pip_size(datos.symbol[i]) for i in range(len(datos))]
-    datos['pips_acm'][datos.type=='sell'] *= -1
+    """
+    Parameters
+    ----------
+    datos : pandas.DataFrame : df con información de transacciones ejecutadas en Oanda,
+                                después de haber ejecutado f_columnas_tiempos
+
+    Returns
+    -------
+    param_data : pandas.DataFrame : df modificado
+
+    Debugging
+    -------
+    datos = 'f_leer_archivo("archivo_tradeview_1.csv")
+    """
+
+    datos['pips'] = [(datos.closeprice[i]-datos.openprice[i])*f_pip_size(datos.symbol[i]) for i in range(len(datos))]
+    datos['pips'][datos.type=='sell'] *= -1
+    datos['pips_acm'] = datos.pips.cumsum()
     datos['profit_acm'] = datos['profit'].cumsum()
-    return datos
+    return datos.copy()
 
 
-# -- ------------------------------------------------------ FUNCION: Pips por instrumento -- #
+
+# -- ------------------------------------------------------ FUNCION: Estadisticas Básicas -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- calcular el tamaño de los pips por instrumento
 
 def f_estadisticas_ba(datos):
-    return pd.DataFrame({
+    """
+    Parameters
+    ----------
+    datos : pandas.DataFrame : df con información de transacciones ejecutadas en Oanda,
+                                después de haber ejecutado f_columnas_tiempos y f_columnas_pips
+
+    Returns
+    -------
+    df_1_tabla : pandas.DataFrame : df con las estadísticas de comportamiento usando los datos presentados en el df.
+    df_2_ranking : pandas.DataFrame : dataframe con ranking entre 0 y 1 de los activos con los cuales se ha sido más
+                                    preciso en las operaciones realizadas.
+
+    Debugging
+    -------
+    datos = 'f_leer_archivo("archivo_tradeview_1.csv")
+    """
+    df_1_tabla = pd.DataFrame({
         'Ops totales': [len(datos['order']), 'Operaciones totales'],
         'Ganadoras': [len(datos[datos['pips_acm']>=0]), 'Operaciones ganadoras'],
         'Ganadoras_c': [len(datos[(datos['type']=='buy') & (datos['pips_acm']>=0)]), 'Operaciones ganadoras de compra'],
@@ -137,15 +176,89 @@ def f_estadisticas_ba(datos):
         'Mediana_profit': [datos['profit'].median(), 'Mediana de rendimeintos de las operaciones'],
         'Mediana_pips': [datos['pips_acm'].median(), 'Mediana de pips de las operaciones'],
         'r_efectividad': [len(datos[datos['pips_acm']>=0])/len(datos['order']),
-                          'Operaciones Totales Vs Ganadoras Totales'],
+                          'Ganadoras Totales/Operaciones Totales'],
         'r_proporcion': [len(datos[datos['pips_acm']>=0])/len(datos[datos['pips_acm'] < 0]),
-                            'Ganadoras Totales Vs Perdedoras Totales'],
-        'r_efectividad_c': [len(datos[(datos['type']=='buy') & (datos['pips_acm']>=0)])/len(datos['order']),
-                            'Totales Vs Ganadoras Compras'],
-        'r_efectividad_v': [len(datos[(datos['type']=='sell') & (datos['pips_acm']>=0)])/len(datos['order']),
-                            'Totales Vs Ganadoras Ventas']
+                            'Ganadoras Totales/ Perdedoras Totales'],
+        'r_efectividad_c': [len(datos[(datos['type']=='buy') & (datos['pips_acm']>=0)])/len(datos[datos['type']=='buy']),
+                            'Ganadoras Compras/ Operaciones Totales'],
+        'r_efectividad_v': [len(datos[(datos['type']=='sell') & (datos['pips_acm']>=0)])/len(datos[datos['type']=='sell']),
+                            'Ganadoras Ventas/ Operaciones Totales']
+    },index=['Valor', 'Descripcion'])
 
 
-    })
+    tmp = pd.DataFrame({i: len(datos[datos.profit>0][datos.symbol == i])/len(datos[datos.symbol == i])
+                      for i in datos.symbol.unique()}, index = ['rank']).T
+    df_2_ranking = tmp.sort_values(by='rank', ascending=False).T
+
+    return  {'df1' : df_1_tabla.copy(), 'df2': df_2_ranking.copy()}
+    #   return df_1_tabla.copy(), df_2_ranking.copy() # prefiero hacer un return en tupla que en diccionario.
+    #       Y recibir la tupla en dos variables distintas en el archivo main.py
+
+
+
+
+# -- --------------------------------------------------------- FUNCION: Capital Acumulado -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- Capital acumulado suponiendo que iniciamos con 5000
+
+def f_capital_acm(datos):
+    """
+    Parameters
+    ----------
+    datos : pandas.DataFrame : df con información de transacciones ejecutadas en Oanda,
+                                después de haber ejecutado f_columnas_tiempos y f_columnas_pips
+
+    Returns
+    -------
+    datos : pandas.DataFrame : se le añade una columna al dataframe recibido y se regresa el mismo dataframe modificado
+
+    Debugging
+    -------
+    datos = 'f_leer_archivo("archivo_tradeview_1.csv")
+    """
+    datos['capital_acm'] = datos.profit_acm + 5000
+    return datos.copy()
+
+
+
+
+# -- --------------------------------------- FUNCION: Metricas de atribución al desempeño -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- Crea matriz de metricas de atribución al desempeño
+
+def f_estadisticas_mad(datos):
+    """
+    Parameters
+    ----------
+    datos : pandas.DataFrame : df con información de transacciones ejecutadas en Oanda,
+                                después de haber ejecutado f_columnas_tiempos y f_columnas_pips
+
+    Returns
+    -------
+    datos : pandas.DataFrame : Se regresa un dataframe con la información relevante acerca de los rendimientos
+                                logarítmicos observados. Se calcularán los rendimientos tomando en cuenta la columna
+                                de pips acumulados, de rendimientos acumulados y bajo el supuesto de que iniciamos con
+                                5000 pesos en la cuenta.
+
+    Debugging
+    -------
+    datos = 'f_leer_archivo("archivo_tradeview_1.csv")
+    """
+    logrend = np.log(datos.capital_acm[1:].values/datos.capital_acm[:-1].values)
+
+    rf = 0.08
+
+    MAD = pd.DataFrame({
+        'sharpe': (logrend.mean()*30-rf)/logrend.std()*(30**0.5),
+        'sortino_c': (logrend.mean()*30-rf)/logrend[logrend>=0].std()*30**.5,
+        'sortino_s': (logrend.mean()*30-rf)/logrend[logrend<0].std()*30**.5,
+        'drawdown': datos.capital_acm.min()-5000,
+        'drawup': datos.capital_acm.max()-5000,
+        'drawdown_pips': datos.pips_acm.min(),
+        'drawup_pips': datos.pips_acm.max()
+    }, index=['Valor'])
+
+    return MAD
+
 
 
