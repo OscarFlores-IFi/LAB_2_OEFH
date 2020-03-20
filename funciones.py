@@ -84,7 +84,7 @@ def f_pip_size(param_ins):
 
 # -- ------------------------------------------------------ FUNCION: Convertir a datetime -- #
 # -- ------------------------------------------------------------------------------------ -- #
-# -- calcular el tamaño de los pips por instrumento
+# -- convertir los datos de fechas en formato datetime
 
 def f_columnas_tiempos(param_data):
     """
@@ -116,9 +116,11 @@ def f_columnas_tiempos(param_data):
 
 
 
+
 # -- ------------------------------------------------------------- FUNCION: Columnas pips -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- calcular los pips acumulados por operación, así como el profit acumulado.
+
 
 def f_columnas_pips(datos):
     """
@@ -145,8 +147,9 @@ def f_columnas_pips(datos):
 
 
 # -- ------------------------------------------------------ FUNCION: Estadisticas Básicas -- #
+
 # -- ------------------------------------------------------------------------------------ -- #
-# -- calcular el tamaño de los pips por instrumento
+# -- Calcula algunas estadísticas entre las operaciones generadas. 
 
 def f_estadisticas_ba(datos):
     """
