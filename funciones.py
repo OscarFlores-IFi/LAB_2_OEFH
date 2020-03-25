@@ -224,6 +224,33 @@ def f_capital_acm(datos):
 
 
 
+# -- ------------------------------------------------------------- FUNCION: Profit diario -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- crea un dataframe con información de los rendimientos por día para calcularles MAD.
+
+def f_profit_diario(datos):
+    """
+    Parameters
+    ----------
+    datos : pandas.DataFrame : df con información de transacciones ejecutadas en Oanda,
+                                después de haber ejecutado f_columnas_tiempos y f_columnas_pips
+
+    Returns
+    -------
+    profit : pandas.DataFrame : df con información de los rendimeintos por día.
+
+    Debugging
+    -------
+    datos = 'f_leer_archivo("archivo_tradeview_1.csv")
+    """
+    datos['ops'] = [i.date() for i in datos.closetime] # cantidad de operaciones cerradas ese dia
+    groups = datos.groupby('ops')
+    [print(i) for i in groups]
+    # No se que hacer después de datos.groupby
+
+    pass
+
+
 
 # -- --------------------------------------- FUNCION: Metricas de atribución al desempeño -- #
 # -- ------------------------------------------------------------------------------------ -- #
@@ -233,8 +260,7 @@ def f_estadisticas_mad(datos):
     """
     Parameters
     ----------
-    datos : pandas.DataFrame : df con información de transacciones ejecutadas en Oanda,
-                                después de haber ejecutado f_columnas_tiempos y f_columnas_pips
+    datos : pandas.DataFrame : df con información de rendimientos diarios.
 
     Returns
     -------
@@ -245,7 +271,7 @@ def f_estadisticas_mad(datos):
 
     Debugging
     -------
-    datos = 'f_leer_archivo("archivo_tradeview_1.csv")
+    datos = f_daily_profit(f_leer_archivo("archivo_tradeview_1.csv"))
     """
     logrend = np.log(datos.capital_acm[1:].values/datos.capital_acm[:-1].values)
 
