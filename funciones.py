@@ -237,18 +237,19 @@ def f_profit_diario(datos):
 
     Returns
     -------
-    profit : pandas.DataFrame : df con información de los rendimeintos por día.
+    df_profit_diario : pandas.DataFrame : df con información de los rendimeintos por día.
 
     Debugging
     -------
     datos = 'f_leer_archivo("archivo_tradeview_1.csv")
     """
     datos['ops'] = [i.date() for i in datos.closetime] # cantidad de operaciones cerradas ese dia
+    diario = pd.date_range(datos.ops.min(),datos.ops.max()).date
     groups = datos.groupby('ops')
-    [print(i) for i in groups]
-    # No se que hacer después de datos.groupby
-
-    pass
+    profit = groups['profit'].sum()
+    profit_diario = [profit[i] if i in profit.index else 0 for i in diario]
+    df_profit_diario = pd.DataFrame(profit_diario,index = diario,columns = ['capital_acm']).cumsum()+5000
+    return df_profit_diario
 
 
 
@@ -260,7 +261,7 @@ def f_estadisticas_mad(datos):
     """
     Parameters
     ----------
-    datos : pandas.DataFrame : df con información de rendimientos diarios.
+    datos : pandas.DataFrame : df con información de rendimientos diarios. debe contener columna 'capital_acm'
 
     Returns
     -------
@@ -275,16 +276,15 @@ def f_estadisticas_mad(datos):
     """
     logrend = np.log(datos.capital_acm[1:].values/datos.capital_acm[:-1].values)
 
-    rf = 0.08
+    rf = 0.0832 #tasa de rendimiento anual de s&p 500
 
     MAD = pd.DataFrame({
-        'sharpe': (logrend.mean()*30-rf)/logrend.std()*(30**0.5),
-        'sortino_c': (logrend.mean()*30-rf)/logrend[logrend>=0].std()*30**.5,
-        'sortino_s': (logrend.mean()*30-rf)/logrend[logrend<0].std()*30**.5,
+        'sharpe': (logrend.mean()*365-rf)/logrend.std()*(365**0.5),
+        'sortino_c': (logrend.mean()*365-rf)/logrend[logrend>=0].std()*365**.5,
+        'sortino_s': (logrend.mean()*365-rf)/logrend[logrend<0].std()*365**.5,
         'drawdown': datos.capital_acm.min()-5000,
         'drawup': datos.capital_acm.max()-5000,
-        'drawdown_pips': datos.pips_acm.min(),
-        'drawup_pips': datos.pips_acm.max()
+        'information ratio': rf,
     }, index=['Valor'])
 
     return MAD
