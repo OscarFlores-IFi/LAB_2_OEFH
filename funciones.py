@@ -285,6 +285,8 @@ def f_estadisticas_mad(datos):
         'drawdown': datos.capital_acm.min()-5000,
         'drawup': datos.capital_acm.max()-5000,
         'information ratio': rf,
+        'avg_rend (annual)': logrend.mean()*365,
+        'std_rend (annual)': logrend.std()*365**0.5
     }, index=['Valor'])
 
     return MAD
