@@ -276,17 +276,17 @@ def f_estadisticas_mad(datos):
     """
     logrend = np.log(datos.capital_acm[1:].values/datos.capital_acm[:-1].values)
 
-    rf = 0.0832 #tasa de rendimiento anual de s&p 500
+    rf = 0.0832/300 #tasa de rendimiento anual de s&p 500
 
     MAD = pd.DataFrame({
-        'sharpe': (logrend.mean()*365-rf)/logrend.std()*(365**0.5),
-        'sortino_c': (logrend.mean()*365-rf)/logrend[logrend>=0].std()*365**.5,
-        'sortino_s': (logrend.mean()*365-rf)/logrend[logrend<0].std()*365**.5,
+        'sharpe': (logrend.mean()-rf)/logrend.std(),
+        'sortino_c': (logrend.mean()-rf)/logrend[logrend>=0].std(),
+        'sortino_s': (logrend.mean()-rf)/logrend[logrend<0].std(),
         'drawdown': datos.capital_acm.min()-5000,
         'drawup': datos.capital_acm.max()-5000,
         'information ratio': rf,
-        'avg_rend (annual)': logrend.mean()*365,
-        'std_rend (annual)': logrend.std()*365**0.5
+        'avg_rend (annual)': logrend.mean()*300,
+        'std_rend (annual)': logrend.std()*300**0.5
     }, index=['Valor'])
 
     return MAD
