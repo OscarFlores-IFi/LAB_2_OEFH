@@ -278,15 +278,18 @@ def f_estadisticas_mad(datos):
     rf = 0.067/300 #tasa de rendimiento 'diaria' cetes28
     rb = 0.0832/300 #tasa de rendimiento 'diaria' de s&p 500
 
-    drawdown = datos.capital_acm[:datos.capital_acm.argmin()].max()-datos.capital_acm.min()
+    drawdown = datos.capital_acm[:datos.capital_acm.idxmin()].max()-datos.capital_acm.min()
+    fecha_dd = (datos.loc[datos.capital_acm[:datos.capital_acm.idxmin()].idxmax()].name, datos.capital_acm.idxmin())
     drawup = datos.capital_acm.max()-datos.capital_acm[:datos.capital_acm.idxmax()].min()
+    fecha_du = (datos.loc[datos.capital_acm[:datos.capital_acm.idxmax()].idxmin()].name, datos.capital_acm.idxmax())
+
 
     MAD = pd.DataFrame({
         'sharpe': (logrend.mean()-rf)/logrend.std(),
         'sortino_c': (logrend.mean()-rf)/logrend[logrend>=0].std(),
         'sortino_s': (logrend.mean()-rf)/logrend[logrend<0].std(),
-        'drawdown': drawdown,
-        'drawup': drawup,
+        'drawdown': "de {} a {} drawdown de ${:.2f}" .format(fecha_dd[0], fecha_dd[1], drawdown),
+        'drawup': "de {} a {} drawup de ${:.2f}".format(fecha_du[0], fecha_du[1], drawup),
         'information ratio': (logrend.mean()-rb)/logrend.std(),
         'avg_rend (annual)': logrend.mean()*300,
         'std_rend (annual)': logrend.std()*300**0.5
@@ -369,7 +372,7 @@ def f_sesgos_cognitivos2(datos):
     casos =  [i for i,j in zip(comb,apcp_cg) if j] # seleccion de combinaciones cuando ocurre apcp_cg
 
     # Para cada caso se calcula
-    
+
 
 
 

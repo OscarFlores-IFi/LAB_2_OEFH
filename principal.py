@@ -17,13 +17,11 @@ estadisticas = fn.f_estadisticas_ba(datos)
 profit_diario = fn.f_profit_diario(datos)
 desempenio = fn.f_estadisticas_mad(profit_diario)
 sesgos = fn.f_sesgos_cognitivos1(datos)
-print(datos)
 df1 = estadisticas['df1']
 df2 = estadisticas['df2']
-print(df1)
-print(df2)
-print(desempenio)
-print(sesgos)
+
+[print(desempenio[i]) for i in desempenio]
+
 
 
 
