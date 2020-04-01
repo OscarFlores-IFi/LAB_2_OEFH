@@ -16,12 +16,19 @@ datos = fn.f_capital_acm(datos)
 estadisticas = fn.f_estadisticas_ba(datos)
 profit_diario = fn.f_profit_diario(datos)
 desempenio = fn.f_estadisticas_mad(profit_diario)
-sesgos = fn.f_sesgos_cognitivos(datos)
+sesgos = fn.f_sesgos_cognitivos1(datos)
 print(datos)
-print(estadisticas['df1'])
-print(estadisticas['df2'])
+df1 = estadisticas['df1']
+df2 = estadisticas['df2']
+print(df1)
+print(df2)
 print(desempenio)
 print(sesgos)
+
+
+
+
+
 
 
 

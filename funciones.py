@@ -86,32 +86,32 @@ def f_pip_size(param_ins):
 # -- ------------------------------------------------------------------------------------ -- #
 # -- convertir los datos de fechas en formato datetime
 
-def f_columnas_tiempos(param_data):
+def f_columnas_tiempos(datos):
     """
     Parameters
     ----------
-    param_data : pandas.DataFrame : df con información de transacciones ejecutadas en Oanda
+    datos : pandas.DataFrame : df con información de transacciones ejecutadas en Oanda
 
     Returns
     -------
-    param_data : pandas.DataFrame : df modificado
+    datos : pandas.DataFrame : df modificado
 
     Debugging
     -------
-    param_data = 'f_leer_archivo("archivo_tradeview_1.csv")
+    datos = 'f_leer_archivo("archivo_tradeview_1.csv")
     """
 
     # Convertir las columnas de closetime y opentime con to_datetime
-    param_data['closetime'] = pd.to_datetime(param_data['closetime'])
-    param_data['opentime'] = pd.to_datetime(param_data['opentime'])
+    datos['closetime'] = pd.to_datetime(datos['closetime'])
+    datos['opentime'] = pd.to_datetime(datos['opentime'])
 
     # Tiempo transcurrido de una operación
-    param_data['tiempo'] = [(param_data.loc[i, 'closetime'] - param_data.loc[i, 'opentime']).delta / 1e9
-                            for i in range(0, len(param_data['closetime']))]
+    datos['tiempo'] = [(datos.loc[i, 'closetime'] - datos.loc[i, 'opentime']).delta / 1e9
+                            for i in range(0, len(datos['closetime']))]
 
     #
 
-    return param_data
+    return datos
 
 
 
@@ -131,7 +131,7 @@ def f_columnas_pips(datos):
 
     Returns
     -------
-    param_data : pandas.DataFrame : df modificado
+    datos : pandas.DataFrame : df modificado
 
     Debugging
     -------
@@ -147,7 +147,6 @@ def f_columnas_pips(datos):
 
 
 # -- ------------------------------------------------------ FUNCION: Estadisticas Básicas -- #
-
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Calcula algunas estadísticas entre las operaciones generadas. 
 
@@ -183,9 +182,9 @@ def f_estadisticas_ba(datos):
         'r_proporcion': [len(datos[datos['pips_acm']>=0])/len(datos[datos['pips_acm'] < 0]),
                             'Ganadoras Totales/ Perdedoras Totales'],
         'r_efectividad_c': [len(datos[(datos['type']=='buy') & (datos['pips_acm']>=0)])/len(datos[datos['type']=='buy']),
-                            'Ganadoras Compras/ Operaciones Totales'],
+                            'Ganadoras Compras/ Operaciones Totales de compra'],
         'r_efectividad_v': [len(datos[(datos['type']=='sell') & (datos['pips_acm']>=0)])/len(datos[datos['type']=='sell']),
-                            'Ganadoras Ventas/ Operaciones Totales']
+                            'Ganadoras Ventas/ Operaciones Totales de venta']
     },index=['Valor', 'Descripcion'])
 
 
@@ -276,22 +275,32 @@ def f_estadisticas_mad(datos):
     """
     logrend = np.log(datos.capital_acm[1:].values/datos.capital_acm[:-1].values)
 
-    rf = 0.0832/300 #tasa de rendimiento anual de s&p 500
+    rf = 0.067/300 #tasa de rendimiento 'diaria' cetes28
+    rb = 0.0832/300 #tasa de rendimiento 'diaria' de s&p 500
+
+    drawdown = datos.capital_acm[:datos.capital_acm.argmin()].max()-datos.capital_acm.min()
+    drawup = datos.capital_acm.max()-datos.capital_acm[:datos.capital_acm.idxmax()].min()
 
     MAD = pd.DataFrame({
         'sharpe': (logrend.mean()-rf)/logrend.std(),
         'sortino_c': (logrend.mean()-rf)/logrend[logrend>=0].std(),
         'sortino_s': (logrend.mean()-rf)/logrend[logrend<0].std(),
-        'drawdown': datos.capital_acm.min()-5000,
-        'drawup': datos.capital_acm.max()-5000,
-        'information ratio': rf,
+        'drawdown': drawdown,
+        'drawup': drawup,
+        'information ratio': (logrend.mean()-rb)/logrend.std(),
         'avg_rend (annual)': logrend.mean()*300,
         'std_rend (annual)': logrend.std()*300**0.5
     }, index=['Valor'])
 
     return MAD
 
-def f_sesgos_cognitivos(datos):
+
+
+# -- ------------------------------------------------------- FUNCION: Sesgos cognitivos 1 -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- calcula sesgos con función propuesta con cadenas de Markov
+
+def f_sesgos_cognitivos1(datos):
     """
     Parameters
     ----------
@@ -323,4 +332,47 @@ def f_sesgos_cognitivos(datos):
     Markov = transition_matrix(datos.profit>0)
     df_markov = pd.DataFrame(Markov, columns=['lose', 'win'], index=['lose', 'win'])
     return df_markov
+
+
+
+
+
+
+
+# -- ------------------------------------------------------- FUNCION: Sesgos cognitivos 2 -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- calcula sesgos por 'Disposition Effect'
+
+def f_sesgos_cognitivos2(datos):
+    """
+    Parameters
+    ----------
+    datos : pandas.DataFrame : df con información de profit en transacciones. Tiene que tener columna 'profit'
+
+    Returns
+    -------
+     : :
+
+    Debugging
+    -------
+    datos = 'f_leer_archivo("archivo_tradeview_1.csv")
+
+    """
+    # Encontrar los casos en los que se cierran operaciones positivas mientras hay una negativa en curso
+    c_g = datos[datos.profit>0].closetime # cierre de operaciones con profit positivo
+    a_p = datos[datos.profit<0].opentime # apertura de operaciones con profit negativo
+    c_p = datos[datos.profit<0].closetime # cierre de operaciones con profit negativo
+    comb = [(i,j) for i in datos[datos.profit>0].index for j in datos[datos.profit<0].index]
+    ap_cg = [(i > j) for i in c_g for j in a_p] # casos en los que a_p es menor que c_g
+    cp_cg = [(i < j) for i in c_g for j in c_p] # casos en los que c_p es mayor que c_g
+    apcp_cg = [(i and j) for i,j in zip(ap_cg,cp_cg)] # casos donde se cierra una operacion ganadora mientras está en curso operación perdedora
+    casos =  [i for i,j in zip(comb,apcp_cg) if j] # seleccion de combinaciones cuando ocurre apcp_cg
+
+    # Para cada caso se calcula
+    
+
+
+
+
+
 
