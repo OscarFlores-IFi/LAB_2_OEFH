@@ -8,6 +8,43 @@
 
 import pandas as pd
 import numpy as np
+from datetime import timedelta
+from oandapyV20 import API
+import oandapyV20.endpoints.instruments as instruments
+import datetime
+import pickle
+
+def f_descarga_precios(date, instrument):
+    """
+    Parameters
+    ---------
+    instrument: str : instrumento del precio que se requiere
+    date : date : fecha del dia del precio
+
+    Returns
+    ---------
+    prices: : precios del activo descargado.
+
+    Debuggin
+    ---------
+        instrument : str : cadena de texto con 'EUR_USD'
+        date = pd.to_datetime("2019-07-06 00:00:00")
+    """
+
+    # Inicializar api de OANDA
+    api = API(environment="practice", access_token='107596e9d65c' + '1bbc9175953d917140' + '12-f975c6201dddad03ac1592232c0ea0ea',)
+
+    # Convertir en string la fecha
+    fecha = date.strftime('%Y-%m-%dT%H:%M:%S')
+    # Parametros para Oanda
+    r = instruments.InstrumentsCandles(instrument=instrument,
+                                       params={"count": 1, "granularity": 'S10', "price": "M", "dailyAlignment": 16, "from": fecha})
+    # Descargar
+    response = api.request(r)
+    # En fomato candles
+    prices = response.get("candles")
+    # Regresar el precio de apertura
+    return prices
 
 
 
@@ -283,7 +320,6 @@ def f_estadisticas_mad(datos):
     drawup = datos.capital_acm.max()-datos.capital_acm[:datos.capital_acm.idxmax()].min()
     fecha_du = (datos.loc[datos.capital_acm[:datos.capital_acm.idxmax()].idxmin()].name, datos.capital_acm.idxmax())
 
-
     MAD = pd.DataFrame({
         'sharpe': (logrend.mean()-rf)/logrend.std(),
         'sortino_c': (logrend.mean()-rf)/logrend[logrend>=0].std(),
@@ -362,20 +398,43 @@ def f_sesgos_cognitivos2(datos):
 
     """
     # Encontrar los casos en los que se cierran operaciones positivas mientras hay una negativa en curso
+#    a_p = datos[datos.profit<0].opentime # apertura de operaciones con profit negativo
+#    c_p = datos[datos.profit<0].closetime # cierre de operaciones con profit negativo
+#    comb = [(i,j) for i in datos[datos.profit>0].index for j in datos[datos.profit<0].index]
+#    ap_cg = [(i > j) for i in c_g for j in a_p] # casos en los que a_p es menor que c_g
+#    cp_cg = [(i < j) for i in c_g for j in c_p] # casos en los que c_p es mayor que c_g
+#    apcp_cg = [(i and j) for i,j in zip(ap_cg,cp_cg)] # casos donde se cierra una operacion ganadora mientras está en curso operación perdedora
+#    casos =  [i for i,j in zip(comb,apcp_cg) if j] # seleccion de combinaciones cuando ocurre apcp_cg
+#    print(casos)
+
+
+
+    # Encontrar los casos en los que se cierran operaciones positivas mientras hay otra operación en curso
     c_g = datos[datos.profit>0].closetime # cierre de operaciones con profit positivo
-    a_p = datos[datos.profit<0].opentime # apertura de operaciones con profit negativo
-    c_p = datos[datos.profit<0].closetime # cierre de operaciones con profit negativo
-    comb = [(i,j) for i in datos[datos.profit>0].index for j in datos[datos.profit<0].index]
+    a_p = datos.opentime # apertura de operaciones con profit negativo
+    c_p = datos.closetime # cierre de operaciones con profit negativo
+    comb = [(i,j) for i in datos[datos.profit>0].index for j in datos.index]
     ap_cg = [(i > j) for i in c_g for j in a_p] # casos en los que a_p es menor que c_g
     cp_cg = [(i < j) for i in c_g for j in c_p] # casos en los que c_p es mayor que c_g
-    apcp_cg = [(i and j) for i,j in zip(ap_cg,cp_cg)] # casos donde se cierra una operacion ganadora mientras está en curso operación perdedora
-    casos =  [i for i,j in zip(comb,apcp_cg) if j] # seleccion de combinaciones cuando ocurre apcp_cg
+    apcp_cg = [(i and j) for i,j in zip(ap_cg,cp_cg)] # casos donde se cierra una operacion ganadora mientras está en curso otra operación
+    casos =  [i for i,j in zip(comb,apcp_cg) if j and (i[0] != i[1])] # seleccion de combinaciones cuando ocurre apcp_cg
 
-    # Para cada caso se calcula
+    # Una vez que conocemos los casos, buscamos el precio en ese momento.
+    fecha_final = [datos.iloc[i[0],:].closetime for i in casos]
+    inst = [(datos.iloc[i[1],:].symbol[:3] + '_' + datos.iloc[i[1],:].symbol[3:]).upper() for i in casos]
 
+    # cargar/guardar cierres instantáneos en .sav
+    try:
+        closes_g = pickle.load(open('closes_g.sav','rb'))
+    except:
+        closes_g = [float(f_descarga_precios(fecha_final[i], inst[i])[0]['mid']['o']) for i in range(len(fecha_final))] # precio de cierre de la 'otra' operacion cuando la ganadora cierra
+        pickle.dump(closes_g, open('closes_g.sav', 'wb'))
 
-
-
+    # Casos en los que se observa el sesgo.
+    apertura_p = [datos.iloc[i[1],:].openprice for i in casos]# precio de la 'otra' operación cuando esta se inició.
+    casos_sesgo = np.array(casos)[(np.array(apertura_p) - np.array(closes_g))<0] # si la diferencia entre el precio cuando se cerró y cuando abrió es negativa, entonces se incurre en el sesgo.
+    print(casos_sesgo)
+    return(casos_sesgo)
 
 
 
