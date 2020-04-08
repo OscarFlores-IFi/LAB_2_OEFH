@@ -373,16 +373,11 @@ def f_sesgos_cognitivos1(datos):
     return df_markov
 
 
-
-
-
-
-
 # -- ------------------------------------------------------- FUNCION: Sesgos cognitivos 2 -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- calcula sesgos por 'Disposition Effect'
 
-def f_sesgos_cognitivos2(datos):
+def f_sesgos_cognitivos2(datos, profit_diario):
     """
     Parameters
     ----------
@@ -432,9 +427,39 @@ def f_sesgos_cognitivos2(datos):
 
     # Casos en los que se observa el sesgo.
     apertura_p = [datos.iloc[i[1],:].openprice for i in casos]# precio de la 'otra' operación cuando esta se inició.
-    casos_sesgo = np.array(casos)[(np.array(apertura_p) - np.array(closes_g))<0] # si la diferencia entre el precio cuando se cerró y cuando abrió es negativa, entonces se incurre en el sesgo.
-    print(casos_sesgo)
-    return(casos_sesgo)
+    dif_flotante = np.array(apertura_p) - np.array(closes_g)
+    casos_sesgo = np.array(casos)[dif_flotante<0] # si la diferencia entre el precio cuando se cerró y cuando abrió es negativa, entonces se incurre en el sesgo.
+
+    ocurrencias = {'ocurrencia_{}'.format(i+1): {
+        'Timestamp': datos.iloc[casos_sesgo[i][0],:].closetime,
+        'operaciones': {
+            'ganadora': {
+                'instrumento': datos.iloc[casos_sesgo[i][0],:].symbol,
+                'volumen': datos.iloc[casos_sesgo[i][0],:].size,
+                'sentido': datos.iloc[casos_sesgo[i][0],:].type,
+                'capital_ganadora': datos.iloc[casos_sesgo[i][0],:].profit
+            },
+
+            'perdedora': {
+                'instrumento': datos.iloc[casos_sesgo[i][1], :].symbol,
+                'volumen': datos.iloc[casos_sesgo[i][1], :].size,
+                'sentido': datos.iloc[casos_sesgo[i][1], :].type,
+                'capital_perdedora': dif_flotante[dif_flotante<0][i] # considerando profit de perdida flotante
+#                'capital_perdedora': datos.iloc[casos_sesgo[i][1], :].profit # considerando profit al finalizar la operación
+            },
+            'ratio_cp_capital_acm': dif_flotante[dif_flotante<0][i]/
+                                    profit_diario.loc[datos.iloc[casos_sesgo[i][0],:].closetime.date()].values[0],
+            'ratio_cg_capital_acm': datos.iloc[casos_sesgo[i][0], :].profit /
+                                    profit_diario.loc[datos.iloc[casos_sesgo[i][0], :].closetime.date()].values[0],
+            'ratio_cp_cg': dif_flotante[dif_flotante<0][i] / datos.iloc[casos_sesgo[i][0],:].profit
+
+        }
+    } for i in range(len(casos_sesgo))}
+
+    
+
+    print(ocurrencias)
+    return(ocurrencias)
 
 
 
