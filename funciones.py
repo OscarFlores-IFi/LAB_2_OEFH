@@ -456,10 +456,31 @@ def f_sesgos_cognitivos2(datos, profit_diario):
         }
     } for i in range(len(casos_sesgo))}
 
-    
+    status_quo = [(np.abs(i['operaciones']['ratio_cp_capital_acm']) < i['operaciones']['ratio_cg_capital_acm']) for i in
+     ocurrencias.values()]
+    aversion_perdida = [((np.abs(i['operaciones']['perdedora']['capital_perdedora'])/
+                         i['operaciones']['ganadora']['capital_ganadora']))>1.5 for i in ocurrencias.values()]
 
-    print(ocurrencias)
-    return(ocurrencias)
+    # Sensibilidad decreciente:
+    fechas = [datos.iloc[casos_sesgo[0][0],:].closetime.date(),datos.iloc[casos_sesgo[-1][0],:].closetime.date()]
+    capital_aumenta = (profit_diario.loc[fechas[0]] < profit_diario.loc[fechas[1]]).values[0] # capital aumenta de
+    cp_cg_aumenta = ((datos.iloc[casos_sesgo[0][0], :].profit < datos.iloc[casos_sesgo[-1][0], :].profit) or
+                     (datos.iloc[casos_sesgo[0][1], :].profit < datos.iloc[casos_sesgo[-1][1], :].profit))
+    cp_cg_1_5 = np.abs(dif_flotante[dif_flotante<0][-1] / datos.iloc[casos_sesgo[-1][0],:].profit)>1.5
+    sensibilidad_decreciente = capital_aumenta and cp_cg_aumenta and cp_cg_1_5
+
+    # Construcción de DataFrame
+    DF = pd.DataFrame(data=[len(casos_sesgo), np.mean(status_quo)*100, np.mean(aversion_perdida)*100, sensibilidad_decreciente],
+                      columns = ['valores'],
+                index = ['ocurrencias', 'status quo', 'aversion perdida', 'sensibilidad decreciente'])
+
+
+    resumen = {'ocurrencias': {'cantidad': len(casos_sesgo),
+        'detalles': ocurrencias},
+               'resultados': {'dataframe': DF}
+               }
+
+    return(resumen)
 
 
 
