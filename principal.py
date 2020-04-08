@@ -17,6 +17,7 @@ datos = fn.f_capital_acm(datos)
 estadisticas = fn.f_estadisticas_ba(datos)
 vz.plot_ranking(estadisticas['df2'])
 profit_diario = fn.f_profit_diario(datos)
+vz.plot_profit_diario(profit_diario)
 desempenio = fn.f_estadisticas_mad(profit_diario)
 sesgos = fn.f_sesgos_cognitivos1(datos)
 df1 = estadisticas['df1']
