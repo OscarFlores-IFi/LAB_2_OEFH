@@ -475,6 +475,7 @@ def f_sesgos_cognitivos2(datos, profit_diario):
                 index = ['ocurrencias', 'status quo', 'aversion perdida', 'sensibilidad decreciente'])
 
 
+    # Resumen, tal cual se pide en la rúbrica.
     resumen = {'ocurrencias': {'cantidad': len(casos_sesgo),
         'detalles': ocurrencias},
                'resultados': {'dataframe': DF}
